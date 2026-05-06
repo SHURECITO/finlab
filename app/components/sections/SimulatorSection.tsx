@@ -193,6 +193,20 @@ export function SimulatorSection() {
             </div>
           </div>
           <div className="form-group full">
+            <a
+              href="/simulator"
+              style={{
+                display: "block",
+                textAlign: "center",
+                fontSize: "13px",
+                color: "var(--green)",
+                textDecoration: "none",
+                fontWeight: 600,
+                marginBottom: "12px",
+              }}
+            >
+              Para un análisis completo →
+            </a>
             <button
               className="btn-simulate"
               onClick={handleSimulate}

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState, type MouseEvent } from "react";
 
 const HERO_METRICS = [
@@ -51,10 +52,7 @@ export function HeroSection() {
             bancario previo.
           </p>
           <div className="hero-actions">
-            <button
-              className="btn-primary"
-              onClick={(e) => scrollToSection(e, "simulator-section")}
-            >
+            <Link href="/simulator" className="btn-primary">
               Simular mi negocio
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path
@@ -65,7 +63,7 @@ export function HeroSection() {
                   strokeLinejoin="round"
                 />
               </svg>
-            </button>
+            </Link>
             <button
               className="btn-secondary"
               onClick={(e) => scrollToSection(e, "about")}

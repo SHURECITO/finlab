@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState, type MouseEvent } from "react";
 
 const SCROLL_TOP_THRESHOLD = 40;
@@ -84,12 +85,9 @@ export function Navbar() {
               </a>
             </li>
           </ul>
-          <button
-            className="btn-nav"
-            onClick={(e) => scrollToSection(e, "simulator-section")}
-          >
+          <Link href="/simulator" className="btn-nav">
             Comenzar gratis
-          </button>
+          </Link>
           <button className="hamburger" aria-label="Menú" onClick={toggleMenu}>
             <span
               style={
@@ -129,13 +127,9 @@ export function Navbar() {
         <a href="#about" onClick={(e) => scrollToSection(e, "about")}>
           Nosotros
         </a>
-        <a
-          href="#simulator-section"
-          className="btn-mobile"
-          onClick={(e) => scrollToSection(e, "simulator-section")}
-        >
+        <Link href="/simulator" className="btn-mobile">
           Comenzar gratis →
-        </a>
+        </Link>
       </div>
 
       <button
