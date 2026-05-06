@@ -150,6 +150,31 @@ section{padding:88px 24px}
 @media(max-width:900px){.features-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:500px){.features-grid{grid-template-columns:1fr}}
 
+/* â”€â”€ FINANCING â”€â”€ */
+.financing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.financing-card{position:relative}
+.financing-card.selected{border-color:var(--green);box-shadow:0 8px 30px rgba(0,208,132,.09)}
+.financing-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.financing-type{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted)}
+.financing-meta{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.financing-label{font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em}
+.financing-value{font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--dark)}
+.financing-toggle{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--text-muted)}
+.financing-toggle input{accent-color:var(--green)}
+.financing-toggle input:disabled + span{opacity:.4}
+.financing-compare{margin-top:28px;background:#fff;border:1.5px solid var(--border);border-radius:18px;padding:24px}
+.financing-compare-title{font-family:'Sora',sans-serif;font-size:16px;font-weight:700;margin-bottom:16px}
+.comparison-table{display:grid;gap:12px}
+.comparison-row{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:12px;align-items:flex-start}
+.comparison-row:not(.comparison-head){border-top:1px solid var(--border);padding-top:12px}
+.comparison-head{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)}
+.comparison-label{font-size:12px;font-weight:600;color:var(--text-muted)}
+.comparison-value{font-size:13px;color:var(--dark)}
+.comparison-list{list-style:none;display:flex;flex-direction:column;gap:6px;padding:0;margin:0}
+.comparison-list li{font-size:12px;color:var(--text-muted);line-height:1.5}
+@media(max-width:900px){.financing-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.financing-grid{grid-template-columns:1fr}.comparison-row{grid-template-columns:1fr}.comparison-head{display:none}}
+
 /* â”€â”€ PROJECTIONS â”€â”€ */
 .proj-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
 .proj-card{border-radius:22px;padding:32px;transition:transform .2s,box-shadow .2s;cursor:default}
@@ -235,6 +260,9 @@ input[type=range]::-webkit-slider-thumb:hover{box-shadow:0 0 0 6px rgba(0,208,13
 .viability-warning{background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);border-radius:14px;padding:18px 22px;display:flex;align-items:center;justify-content:space-between}
 .vr-warning-label{font-size:14px;font-weight:600;color:#FBBF24}
 .vr-warning-val{font-family:'Sora',sans-serif;font-size:18px;font-weight:800;color:#FBBF24}
+.viability-danger{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:14px;padding:18px 22px;display:flex;align-items:center;justify-content:space-between}
+.vr-danger-label{font-size:14px;font-weight:600;color:#EF4444}
+.vr-danger-val{font-family:'Sora',sans-serif;font-size:18px;font-weight:800;color:#EF4444}
 .loading-indicator{text-align:center;padding:24px;color:#666}
 .spinner{width:24px;height:24px;border:2.5px solid rgba(0,208,132,.3);border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite;display:inline-block;margin-bottom:8px}
 @media(max-width:700px){.sim-form{grid-template-columns:1fr}.results-grid{grid-template-columns:1fr 1fr}}
