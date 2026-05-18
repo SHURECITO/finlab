@@ -1,0 +1,32 @@
+steps:
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        cd backend && \
+        docker build -t us-central1-docker.pkg.dev/$PROJECT_ID/finlab-backend/finlab-backend:$COMMIT_SHA . && \
+        docker push us-central1-docker.pkg.dev/$PROJECT_ID/finlab-backend/finlab-backend:$COMMIT_SHA && \
+        gcloud run deploy finlab-backend \
+          --image=us-central1-docker.pkg.dev/$PROJECT_ID/finlab-backend/finlab-backend:$COMMIT_SHA \
+          --region=us-central1 \
+          --platform=managed \
+          --allow-unauthenticated \
+          --min-instances=1 \
+          --max-instances=10 \
+          --memory=512Mi \
+          --cpu=1 \
+          --port=8080 \
+          --timeout=60s \
+          --concurrency=80 \
+          --update-secrets=JWT_SECRET=jwt-secret:latest,MONGODB_URI=mongodb-uri:2 \
+          --update-env-vars="NODE_ENV=production,ALLOWED_ORIGINS=http://localhost:3000,https://finlab-shurecitos-projects.vercel.app,https://finlab-umber.vercel.app" \
+          --quiet
+
+images:
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/finlab-backend/finlab-backend:$COMMIT_SHA'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+timeout: 1200s
