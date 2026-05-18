@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   FINANCING_OPTIONS,
   type FinancingOption,
@@ -71,41 +71,39 @@ export function FinancingSection() {
   const addRef = useScrollObserver();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [toast, setToast] = useState<string | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showToast = (msg: string) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     setToast(msg);
-    setTimeout(() => setToast(null), 2500);
+    toastTimerRef.current = setTimeout(() => setToast(null), 2500);
   };
 
   const toggleSelection = (id: string) => {
     const option = FINANCING_OPTIONS.find((o) => o.id === id);
     if (!option) return;
 
-    setSelectedIds((prev) => {
-      // Deselect if already selected
-      if (prev.includes(id)) {
-        return prev.filter((item) => item !== id);
-      }
+    // Determine toast message synchronously (read current selectedIds from closure, not updater prev)
+    const isCurrentlySelected = selectedIds.includes(id);
 
-      // Check category consistency
-      if (prev.length > 0) {
-        const existingCategory = FINANCING_OPTIONS.find(
-          (o) => o.id === prev[0],
-        )?.type;
-        if (existingCategory && option.type !== existingCategory) {
-          showToast(
-            `Solo puedes comparar opciones del mismo tipo (${TYPE_LABELS[existingCategory]}). Se ha reiniciado la selección.`,
-          );
-          return [id]; // Replace all with new selection
-        }
+    if (!isCurrentlySelected && selectedIds.length > 0) {
+      const existingCategory = FINANCING_OPTIONS.find((o) => o.id === selectedIds[0])?.type;
+      if (existingCategory && option.type !== existingCategory) {
+        showToast(
+          `Solo puedes comparar opciones del mismo tipo (${TYPE_LABELS[existingCategory]}). Se ha reiniciado la selección.`,
+        );
+        setSelectedIds([id]);
+        return;
       }
-
-      // Max 3 items
-      if (prev.length >= MAX_SELECTION) {
+      if (selectedIds.length >= MAX_SELECTION) {
         showToast(`Máximo ${MAX_SELECTION} opciones a la vez.`);
-        return prev;
+        return;
       }
+    }
 
+    // Pure state update — no side effects here
+    setSelectedIds((prev) => {
+      if (prev.includes(id)) return prev.filter((item) => item !== id);
       return [...prev, id];
     });
   };
