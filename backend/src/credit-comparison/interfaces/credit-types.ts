@@ -3,6 +3,7 @@ export interface EntityInfo {
   name: string;
   type: 'banco' | 'fintech';
   logoUrl: string;
+  applyUrl?: string;
 }
 
 export interface AmortizationRow {

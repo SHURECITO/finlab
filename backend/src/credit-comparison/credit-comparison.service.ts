@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { FinancialEntity, FinancialEntityDocument } from './schemas/financial-entity.schema';
@@ -33,7 +33,7 @@ export class CreditComparisonService {
     private readonly interpretation: InterpretationService,
   ) {}
 
-  async simulate(dto: SimulateCreditDto): Promise<SimulationResponse> {
+  async simulate(dto: SimulateCreditDto, userId?: string): Promise<SimulationResponse> {
     const { monto, plazoMeses } = dto;
 
     const ipcRate = await this.rateModel.findOne({ indicator: 'IPC_ANUAL' }).exec();
@@ -66,6 +66,7 @@ export class CreditComparisonService {
             name: entity.name,
             type: entity.type as 'banco' | 'fintech',
             logoUrl: entity.logoUrl,
+            applyUrl: product.applyUrl ?? '',
           },
           elegible: true,
           tasaEA: product.tasaEA,
@@ -111,7 +112,7 @@ export class CreditComparisonService {
     const eligibleResults = resultados.filter((r) => r.elegible);
     const recomendacion = this.buildRecomendacion(eligibleResults);
 
-    return {
+    const baseResponse: SimulationResponse = {
       simulationId: new Types.ObjectId().toString(),
       monto,
       plazoMeses,
@@ -121,17 +122,66 @@ export class CreditComparisonService {
       resultados,
       recomendacion,
     };
+
+    if (userId) {
+      const saved = await this.savedSimModel.create({
+        userId: new Types.ObjectId(userId),
+        monto,
+        plazoMeses,
+        proposito: dto.proposito ?? 'libre_inversion',
+        result: baseResponse as unknown as Record<string, unknown>,
+      });
+      baseResponse.simulationId = (saved._id as Types.ObjectId).toString();
+    }
+
+    return baseResponse;
   }
 
   async getEntities(): Promise<FinancialEntityDocument[]> {
     return this.entityModel.find().exec();
   }
 
-  async getUserSimulations(userId: string): Promise<SavedSimulationDocument[]> {
-    return this.savedSimModel
+  async getUserSimulations(userId: string): Promise<{
+    simulations: Array<{ id: string; monto: number; plazoMeses: number; mejorOpcion: string; createdAt: Date }>;
+  }> {
+    const docs = await this.savedSimModel
       .find({ userId: new Types.ObjectId(userId) })
       .sort({ createdAt: -1 })
+      .limit(20)
+      .lean()
       .exec();
+
+    return {
+      simulations: docs.map((doc) => {
+        const result = doc.result as { recomendacion?: { mejorOpcion?: string } };
+        const docWithTs = doc as typeof doc & { createdAt: Date };
+        return {
+          id: (doc._id as Types.ObjectId).toString(),
+          monto: doc.monto,
+          plazoMeses: doc.plazoMeses,
+          mejorOpcion: result?.recomendacion?.mejorOpcion ?? '—',
+          createdAt: docWithTs.createdAt,
+        };
+      }),
+    };
+  }
+
+  async getSimulationById(id: string, userId: string): Promise<SavedSimulationDocument> {
+    const doc = await this.savedSimModel.findById(id).exec();
+    if (!doc) throw new NotFoundException(`Simulación ${id} no encontrada`);
+    if (doc.userId.toString() !== userId) {
+      throw new ForbiddenException('No tienes acceso a esta simulación');
+    }
+    return doc;
+  }
+
+  async deleteSimulation(id: string, userId: string): Promise<void> {
+    const doc = await this.savedSimModel.findById(id).exec();
+    if (!doc) throw new NotFoundException(`Simulación ${id} no encontrada`);
+    if (doc.userId.toString() !== userId) {
+      throw new ForbiddenException('No tienes acceso a esta simulación');
+    }
+    await this.savedSimModel.findByIdAndDelete(id).exec();
   }
 
   async saveSimulation(
@@ -196,7 +246,7 @@ export class CreditComparisonService {
 
   private buildIneligibleResult(
     entity: FinancialEntityDocument,
-    product: { tasaEA: number },
+    product: { tasaEA: number; applyUrl?: string },
     razon: string,
   ): CreditResult {
     return {
@@ -205,6 +255,7 @@ export class CreditComparisonService {
         name: entity.name,
         type: entity.type as 'banco' | 'fintech',
         logoUrl: entity.logoUrl,
+        applyUrl: product.applyUrl ?? '',
       },
       elegible: false,
       razonNoElegible: razon,

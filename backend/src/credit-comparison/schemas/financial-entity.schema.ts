@@ -30,6 +30,9 @@ export class EntityProduct {
 
   @Prop()
   sourceUrl: string;
+
+  @Prop()
+  applyUrl: string;
 }
 
 @Schema({ collection: 'financialEntities', timestamps: true })
