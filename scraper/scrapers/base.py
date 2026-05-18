@@ -1,9 +1,12 @@
+import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from playwright.async_api import Page
+
+logger = logging.getLogger(__name__)
 
 @dataclass
 class EntityData:
@@ -37,8 +40,8 @@ class BaseEntityScraper(ABC):
             await page.goto(self.url, wait_until="networkidle", timeout=30000)
             html = await page.content()
             return self._parse(html)
-        except Exception as e:
-            print(f"[{self.code}] scrape error: {e}")
+        except Exception:
+            logger.exception("[%s] scrape error", self.code)
             return None
 
     @abstractmethod

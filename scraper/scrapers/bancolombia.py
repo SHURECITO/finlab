@@ -12,10 +12,29 @@ class BancolombiaScraper(BaseEntityScraper):
 
     def _parse(self, html: str) -> Optional[EntityData]:
         soup = BeautifulSoup(html, "html.parser")
-        text = soup.get_text(" ")
-        match = re.search(r"(\d{1,2}(?:[.,]\d+)?)\s*%\s*E\.?A\.?", text, re.IGNORECASE)
+
+        # Try to scope to a section containing rate information before falling back to full page
+        # This avoids matching marketing/legal percentages that appear earlier in the DOM
+        candidate_sections = soup.find_all(
+            string=re.compile(r"tasa|libre\s+inversi[oó]n|inter[eé]s", re.IGNORECASE)
+        )
+
+        search_text = ""
+        for section in candidate_sections:
+            parent = section.parent
+            if parent:
+                section_text = parent.get_text(" ")
+                if re.search(r"\d{1,2}(?:[.,]\d+)?\s*%\s*E\.?A\.?", section_text, re.IGNORECASE):
+                    search_text = section_text
+                    break
+
+        if not search_text:
+            search_text = soup.get_text(" ")
+
+        match = re.search(r"(\d{1,2}(?:[.,]\d+)?)\s*%\s*E\.?A\.?", search_text, re.IGNORECASE)
         if not match:
             return None
+
         tasa_ea = float(match.group(1).replace(",", ".")) / 100
         return EntityData(
             code=self.code,

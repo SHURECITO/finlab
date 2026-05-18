@@ -29,3 +29,15 @@ class TestBancolombia:
         assert p["montoMaximo"] == 500_000_000
         assert p["plazoMinMeses"] == 48
         assert p["plazoMaxMeses"] == 84
+
+    def test_parse_ignores_decoy_percentage(self):
+        html = """<html><body>
+        <p class="legal">Hasta un 10,00% E.A. de descuento en seguros.</p>
+        <section>
+          <h2>Crédito de Libre Inversión</h2>
+          <p>Tasa desde <strong>25,00% E.A.</strong></p>
+        </section>
+        </body></html>"""
+        result = self.scraper._parse(html)
+        assert result is not None
+        assert result.products[0]["tasaEA"] == pytest.approx(0.25, abs=0.001)
