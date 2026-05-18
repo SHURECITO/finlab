@@ -145,12 +145,12 @@ export default function DashboardPage() {
           }}>
             + Nueva empresa
           </Link>
-          <Link href="/simulator" style={{
+          <Link href="/dashboard/comparador-credito" style={{
             padding: '12px 24px', background: 'rgba(0,255,135,.1)', borderRadius: '10px',
             color: '#00FF87', fontWeight: 600, fontSize: '14px', textDecoration: 'none',
             border: '1px solid rgba(0,255,135,.2)',
           }}>
-            ⚡ Nueva simulación
+            💳 Comparador de Crédito
           </Link>
         </div>
       </div>
@@ -167,7 +167,7 @@ export default function DashboardPage() {
             borderRadius: '16px', padding: '32px', textAlign: 'center', color: '#555',
           }}>
             Aún no tienes simulaciones.{' '}
-            <Link href="/simulator" style={{ color: '#00FF87', textDecoration: 'none' }}>Crea tu primera simulación</Link>.
+            <Link href="/dashboard/comparador-credito" style={{ color: '#00FF87', textDecoration: 'none' }}>Crea tu primera simulación</Link>.
           </div>
         ) : (
           <div style={{

@@ -27,7 +27,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {[
           { href: '/dashboard', label: '🏠 Inicio' },
           { href: '/dashboard/companies', label: '🏢 Mis empresas' },
-          { href: '/simulator', label: '⚡ Nueva simulación' },
+          { href: '/dashboard/comparador-credito', label: '💳 Comparador de Crédito' },
           { href: '/dashboard/profile', label: '👤 Perfil' },
         ].map(item => (
           <Link key={item.href} href={item.href} style={{
