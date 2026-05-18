@@ -14,7 +14,8 @@ export class FinancingAlternativesService {
   ) {}
 
   async findAll(category?: string): Promise<FinancingAlternativeDocument[]> {
-    const filter = category ? { category } : {};
+    const filter: Record<string, unknown> = { stale: false };
+    if (category) filter.category = category;
     return this.model.find(filter).sort({ montoMinimo: 1 }).exec();
   }
 }

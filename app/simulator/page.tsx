@@ -5,5 +5,5 @@ import { redirect } from 'next/navigation';
  * Redirects all visitors to /dashboard/comparador-credito.
  */
 export default function SimulatorPage() {
-  redirect('/dashboard/comparador-credito');
+  redirect('/dashboard/comparador-alternativas');
 }

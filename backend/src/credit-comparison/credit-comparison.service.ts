@@ -207,10 +207,6 @@ export class CreditComparisonService {
     return doc.save();
   }
 
-  async getSavedSimulation(id: string): Promise<SavedSimulationDocument | null> {
-    return this.savedSimModel.findById(id).exec();
-  }
-
   // ---- Private helpers ----
 
   private checkEligibility(

@@ -253,6 +253,9 @@ function ComparadorContent() {
       .then((saved) => {
         setResult(saved);
         setSimulationId(idFromUrl);
+        setMonto(saved.monto);
+        setMontoDisplay(saved.monto > 0 ? formatCOP(saved.monto).replace('$', '') : '');
+        setPlazoMeses(saved.plazoMeses);
       })
       .catch(() => setRestoreError('No se pudo restaurar la simulación guardada.'))
       .finally(() => setLoading(false));
