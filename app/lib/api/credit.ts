@@ -30,6 +30,7 @@ export interface CreditResultItem {
     name: string;
     type: 'banco' | 'fintech';
     logoUrl: string;
+    applyUrl?: string;
   };
   elegible: boolean;
   razonNoElegible?: string;
@@ -130,4 +131,103 @@ export function getExcelDownloadUrl(simulationId: string): string {
 
 export function getPdfDownloadUrl(simulationId: string): string {
   return `${API_BASE_URL}/credit/export/${simulationId}/pdf`;
+}
+
+// Alias so other functions can reference the simulation response type
+export type SimulationResponse = SimulationApiResponse;
+
+// ---- Task 9: PDF download ----
+
+export async function downloadSimulationPdf(
+  simulationId: string,
+  type: 'summary' | 'detailed',
+  entityCode?: string,
+): Promise<void> {
+  const { getToken } = await import('@/lib/auth');
+  const token = getToken();
+  if (!token) throw new Error('No autenticado');
+
+  const params = new URLSearchParams({ type });
+  if (entityCode) params.set('entity', entityCode);
+
+  const res = await fetch(
+    `${API_BASE_URL}/credit/export/${simulationId}/pdf?${params.toString()}`,
+    { headers: { Authorization: `Bearer ${token}` } },
+  );
+
+  if (!res.ok) throw new Error(`PDF error ${res.status}`);
+
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+
+  const disposition = res.headers.get('Content-Disposition') ?? '';
+  const match = /filename="([^"]+)"/.exec(disposition);
+  a.download = match?.[1] ?? `finlab-simulacion.pdf`;
+  a.href = url;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ---- Task 10: Get simulation by ID ----
+
+export async function getSimulationById(id: string): Promise<SimulationApiResponse & { _id: string }> {
+  const { getToken } = await import('@/lib/auth');
+  const token = getToken();
+  if (!token) throw new Error('No autenticado');
+
+  const res = await fetch(`${API_BASE_URL}/credit/simulations/${id}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!res.ok) throw new Error(`Error ${res.status}`);
+  const doc = await res.json() as { _id: string; result: SimulationApiResponse };
+  return { ...doc.result, _id: doc._id };
+}
+
+// ---- Task 11: Delete simulation ----
+
+export async function deleteSimulation(id: string): Promise<void> {
+  const { getToken } = await import('@/lib/auth');
+  const token = getToken();
+  if (!token) throw new Error('No autenticado');
+
+  const res = await fetch(`${API_BASE_URL}/credit/simulations/${id}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`Error ${res.status}`);
+}
+
+// ---- Task 12: Financing alternatives ----
+
+export interface FinancingAlternative {
+  _id: string;
+  code: string;
+  name: string;
+  category: 'capital_semilla' | 'crowdfunding' | 'equity';
+  descripcion: string;
+  costoDescripcion: string;
+  montoMinimo: number;
+  montoMaximo: number;
+  plazoEjecucionMeses?: number;
+  requisitos: string[];
+  ventajas: string[];
+  desventajas: string[];
+  applyUrl: string;
+  logoUrl: string;
+  sourceUrl: string;
+}
+
+export async function getFinancingAlternatives(): Promise<FinancingAlternative[]> {
+  const { getToken } = await import('@/lib/auth');
+  const token = getToken();
+  if (!token) throw new Error('No autenticado');
+  const res = await fetch(`${API_BASE_URL}/financing-alternatives`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`Error ${res.status}`);
+  return res.json() as Promise<FinancingAlternative[]>;
 }
