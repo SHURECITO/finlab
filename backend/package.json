@@ -18,7 +18,8 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "seed:entities": "ts-node -r tsconfig-paths/register src/seeds/financial-entities.seed.ts"
+    "seed:entities": "ts-node -r tsconfig-paths/register src/seeds/financial-entities.seed.ts",
+    "seed:alternatives": "ts-node -r tsconfig-paths/register src/seeds/financing-alternatives.seed.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
