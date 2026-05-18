@@ -11,6 +11,11 @@ export function Navbar() {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isScrolled, setIsScrolled] = useState(false);
   const [showBackTop, setShowBackTop] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    setIsLoggedIn(!!localStorage.getItem('finlab_token'));
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -84,10 +89,19 @@ export function Navbar() {
                 Nosotros
               </a>
             </li>
+            <li>
+              <Link href="/investors">Para Inversionistas</Link>
+            </li>
           </ul>
-          <Link href="/simulator" className="btn-nav">
-            Comenzar gratis
-          </Link>
+          {isLoggedIn ? (
+            <Link href="/dashboard" className="btn-nav">
+              Mi Dashboard
+            </Link>
+          ) : (
+            <Link href="/auth/register" className="btn-nav">
+              Comenzar gratis
+            </Link>
+          )}
           <button className="hamburger" aria-label="Menú" onClick={toggleMenu}>
             <span
               style={
@@ -127,9 +141,16 @@ export function Navbar() {
         <a href="#about" onClick={(e) => scrollToSection(e, "about")}>
           Nosotros
         </a>
-        <Link href="/simulator" className="btn-mobile">
-          Comenzar gratis →
-        </Link>
+        <Link href="/investors">Para Inversionistas</Link>
+        {isLoggedIn ? (
+          <Link href="/dashboard" className="btn-mobile">
+            Mi Dashboard →
+          </Link>
+        ) : (
+          <Link href="/auth/register" className="btn-mobile">
+            Comenzar gratis →
+          </Link>
+        )}
       </div>
 
       <button

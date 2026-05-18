@@ -8,9 +8,11 @@ export interface SimulationPayload {
   sector: string;
   projectionHorizon: 1 | 3 | 5;
   expectedGrowthRate: number;
+  companyId?: string;
 }
 
 export interface SimulationResponse {
+  id?: string;
   projectedIRR: number;
   paybackPeriod: number;
   annualNetFlow: number;

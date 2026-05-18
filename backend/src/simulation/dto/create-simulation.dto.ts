@@ -1,4 +1,4 @@
-import { IsEnum, IsIn, IsNumber, Max, Min } from 'class-validator';
+import { IsEnum, IsIn, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
 import type { Sector } from '../types/simulation.types';
 import { SECTOR_VALUES } from '../types/simulation.types';
 
@@ -34,4 +34,8 @@ export class CreateSimulationDto {
   @Min(MIN_GROWTH_RATE)
   @Max(MAX_GROWTH_RATE)
   expectedGrowthRate: number;
+
+  @IsOptional()
+  @IsString()
+  companyId?: string;
 }

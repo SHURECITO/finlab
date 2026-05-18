@@ -52,7 +52,7 @@ export function HeroSection() {
             bancario previo.
           </p>
           <div className="hero-actions">
-            <Link href="/simulator" className="btn-primary">
+            <Link href="/auth/register" className="btn-primary">
               Simular mi negocio
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path

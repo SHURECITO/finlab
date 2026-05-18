@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { runSimulation, type SimulationResponse } from "@/lib/api/simulation";
 import { useScrollObserver } from "./useScrollObserver";
 
@@ -237,6 +238,12 @@ export function SimulatorSection() {
                 </>
               )}
             </button>
+            <p style={{ textAlign: 'center', marginTop: '16px', fontSize: '13px', color: '#666' }}>
+              ¿Quieres guardar tus simulaciones?{' '}
+              <Link href="/auth/register" style={{ color: '#00FF87', textDecoration: 'none' }}>
+                Crea tu cuenta gratis →
+              </Link>
+            </p>
           </div>
         </div>
         <div className={`sim-results ${showResults ? "show" : ""}`} id="simResults">

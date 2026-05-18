@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { runSimulation, type SimulationResponse } from "@/lib/api/simulation";
 
 const DEFAULT_CAPITAL = 50000000;
@@ -94,6 +95,9 @@ function getFinancingRecommendation(
 }
 
 export function SimulatorPageContent() {
+  const searchParams = useSearchParams();
+  const companyId = searchParams.get('companyId') ?? undefined;
+
   const [capital, setCapital] = useState<number>(DEFAULT_CAPITAL);
   const [ingresos, setIngresos] = useState<number>(DEFAULT_REVENUE);
   const [costos, setCostos] = useState<number>(DEFAULT_COSTS);
@@ -118,6 +122,7 @@ export function SimulatorPageContent() {
         sector,
         projectionHorizon: horizon,
         expectedGrowthRate: growth,
+        companyId,
       });
       setResults(response);
       setTimeout(() => {
@@ -649,6 +654,15 @@ export function SimulatorPageContent() {
                 Ver catálogo completo de financiamiento →
               </Link>
             </div>
+          </div>
+        )}
+        {companyId && (
+          <div style={{ marginTop: "16px", textAlign: "center" }}>
+            <Link href={`/dashboard/companies/${companyId}`} style={{
+              color: "#00FF87", textDecoration: "none", fontSize: "14px", fontWeight: 500,
+            }}>
+              ← Volver a la empresa
+            </Link>
           </div>
         )}
       </div>
