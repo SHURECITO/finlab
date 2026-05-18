@@ -23,6 +23,7 @@ async def _scrape_entities(pw) -> None:
     browser = await pw.chromium.launch(headless=True)
     for scraper_cls in ALL_SCRAPERS:
         scraper = scraper_cls()
+        page = None
         try:
             page = await browser.new_page()
         except Exception:
