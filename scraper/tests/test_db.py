@@ -16,6 +16,7 @@ async def test_upsert_rate_calls_find_one_and_update():
     call_args = mock_collection.find_one_and_update.call_args
     assert call_args[0][0] == {"indicator": "IBR_1M"}
     assert call_args[0][1]["$set"]["value"] == 0.1065
+    assert call_args[1]["upsert"] is True
 
 @pytest.mark.asyncio
 async def test_upsert_entity_success_writes_stale_false():
