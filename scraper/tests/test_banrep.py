@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 from rates.banrep import _parse_ibr_html, _parse_ipc_html
 
 # Representative snippet of Banrep's IBR table HTML
@@ -62,3 +62,34 @@ def test_parse_ibr_html_raises_on_empty_table():
 def test_parse_ipc_html_raises_on_empty_table():
     with pytest.raises(ValueError, match="IPC"):
         _parse_ipc_html("<html><body><table></table></body></html>")
+
+@pytest.mark.asyncio
+async def test_fetch_reference_rates_returns_four_dicts():
+    from unittest.mock import AsyncMock, MagicMock
+    from rates.banrep import fetch_reference_rates
+
+    mock_response = MagicMock()
+    mock_response.raise_for_status = MagicMock()
+
+    # IBR response uses IBR_FIXTURE, IPC response uses IPC_FIXTURE
+    mock_response.text = IBR_FIXTURE  # will be overridden per call
+
+    ibr_mock = MagicMock()
+    ibr_mock.raise_for_status = MagicMock()
+    ibr_mock.text = IBR_FIXTURE
+
+    ipc_mock = MagicMock()
+    ipc_mock.raise_for_status = MagicMock()
+    ipc_mock.text = IPC_FIXTURE
+
+    mock_client = AsyncMock()
+    mock_client.get = AsyncMock(side_effect=[ibr_mock, ipc_mock])
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=False)
+
+    with patch("rates.banrep.httpx.AsyncClient", return_value=mock_client):
+        result = await fetch_reference_rates()
+
+    assert len(result) == 4
+    indicators = {r["indicator"] for r in result}
+    assert indicators == {"IBR_1M", "IBR_3M", "IBR_6M", "IPC_ANUAL"}
