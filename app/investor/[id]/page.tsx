@@ -9,9 +9,10 @@ import { API_BASE_URL } from "@/lib/api/helpers";
 
 interface YearlyProjection {
   year: number;
-  optimistic: { revenue: number; costs: number; netFlow: number };
-  realistic: { revenue: number; costs: number; netFlow: number };
-  pessimistic: { revenue: number; costs: number; netFlow: number };
+  netFlow: number;
+  optimistic: number;
+  realistic: number;
+  pessimistic: number;
 }
 
 interface SimulationData {
@@ -53,7 +54,8 @@ const COP_LOCALE = "es-CO";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function formatCOP(value: number): string {
+function formatCOP(value: number | undefined | null): string {
+  if (value == null || isNaN(value)) return "—";
   return "$" + Math.round(value).toLocaleString(COP_LOCALE);
 }
 
@@ -611,7 +613,7 @@ export default function InvestorSimulationPage() {
                         fontWeight: 700,
                       }}
                     >
-                      {formatCOP(proj.optimistic.netFlow)}
+                      {formatCOP(proj.optimistic)}
                     </td>
                     <td
                       style={{
@@ -621,7 +623,7 @@ export default function InvestorSimulationPage() {
                         fontWeight: 700,
                       }}
                     >
-                      {formatCOP(proj.realistic.netFlow)}
+                      {formatCOP(proj.realistic)}
                     </td>
                     <td
                       style={{
@@ -631,7 +633,7 @@ export default function InvestorSimulationPage() {
                         fontWeight: 700,
                       }}
                     >
-                      {formatCOP(proj.pessimistic.netFlow)}
+                      {formatCOP(proj.pessimistic)}
                     </td>
                   </tr>
                 ))}
