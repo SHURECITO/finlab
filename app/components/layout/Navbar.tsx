@@ -65,10 +65,10 @@ export function Navbar() {
           <ul className="nav-links">
             <li>
               <a
-                href="#simulator-section"
-                onClick={(e) => scrollToSection(e, "simulator-section")}
+                href="#comparador-cta"
+                onClick={(e) => scrollToSection(e, "comparador-cta")}
               >
-                Simulador
+                Comparar
               </a>
             </li>
             <li>
@@ -98,8 +98,8 @@ export function Navbar() {
               Mi Dashboard
             </Link>
           ) : (
-            <Link href="/auth/register" className="btn-nav">
-              Comenzar gratis
+            <Link href="/auth/login" className="btn-nav">
+              Iniciar sesión
             </Link>
           )}
           <button className="hamburger" aria-label="Menú" onClick={toggleMenu}>
@@ -124,10 +124,10 @@ export function Navbar() {
 
       <div className={`mobile-menu ${isMenuOpen ? "open" : ""}`} id="mobileMenu">
         <a
-          href="#simulator-section"
-          onClick={(e) => scrollToSection(e, "simulator-section")}
+          href="#comparador-cta"
+          onClick={(e) => scrollToSection(e, "comparador-cta")}
         >
-          Simulador
+          Comparar
         </a>
         <a href="#financing" onClick={(e) => scrollToSection(e, "financing")}>
           Financiamiento
@@ -147,8 +147,8 @@ export function Navbar() {
             Mi Dashboard →
           </Link>
         ) : (
-          <Link href="/auth/register" className="btn-mobile">
-            Comenzar gratis →
+          <Link href="/auth/login" className="btn-mobile">
+            Iniciar sesión →
           </Link>
         )}
       </div>
