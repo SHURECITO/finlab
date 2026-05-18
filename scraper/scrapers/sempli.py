@@ -21,12 +21,12 @@ class SempliScraper(BaseEntityScraper):
             parent = section.parent
             if parent:
                 section_text = parent.get_text(" ")
-                if re.search(r"\d{1,2}(?:[.,]\d+)?\s*%\s*E\.?A\.?", section_text, re.IGNORECASE):
+                if re.search(r"(?<!\d)\d{1,2}(?:[.,]\d+)?\s*%\s*E\.?A\.?", section_text, re.IGNORECASE):
                     search_text = section_text
                     break
         if not search_text:
             search_text = soup.get_text(" ")
-        match = re.search(r"(\d{1,2}(?:[.,]\d+)?)\s*%\s*E\.?A\.?", search_text, re.IGNORECASE)
+        match = re.search(r"(?<!\d)(\d{1,2}(?:[.,]\d+)?)\s*%\s*E\.?A\.?", search_text, re.IGNORECASE)
         if not match:
             return None
         tasa_ea = float(match.group(1).replace(",", ".")) / 100
