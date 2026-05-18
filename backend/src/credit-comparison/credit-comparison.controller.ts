@@ -201,9 +201,6 @@ export class CreditComparisonController {
     const montoStr = this.formatCOP(result.monto);
     const plazoStr = `${result.plazoMeses} meses`;
 
-    const doc = new PDFDocument({ margin: 50, size: 'A4' });
-    res.setHeader('Content-Type', 'application/pdf');
-
     if (type === 'detailed' && entityCode) {
       const entityResult = result.resultados.find(
         (r: CreditResult) => r.entidad.code === entityCode && r.elegible,
@@ -212,6 +209,8 @@ export class CreditComparisonController {
         throw new NotFoundException(`Entidad ${entityCode} no encontrada o no elegible`);
       }
 
+      const doc = new PDFDocument({ margin: 50, size: 'A4' });
+      res.setHeader('Content-Type', 'application/pdf');
       const dateTag = new Date().toISOString().slice(0, 10).replace(/-/g, '');
       const montoTag = `${Math.round(result.monto / 1_000_000)}M`;
       res.setHeader(
@@ -281,7 +280,16 @@ export class CreditComparisonController {
         y += 13;
       }
 
+      doc.moveDown(2);
+      doc.fontSize(8).fillColor('gray').text(
+        `Generado por FinLab el ${fechaStr}. Las tasas son referenciales y pueden variar al momento de solicitud.`,
+        { align: 'center' },
+      );
+      doc.end();
+
     } else {
+      const doc = new PDFDocument({ margin: 50, size: 'A4' });
+      res.setHeader('Content-Type', 'application/pdf');
       const dateTag = new Date().toISOString().slice(0, 10).replace(/-/g, '');
       const montoTag = `${Math.round(result.monto / 1_000_000)}M`;
       res.setHeader(
@@ -351,14 +359,14 @@ export class CreditComparisonController {
       doc.moveDown(0.4);
       doc.fontSize(11).font('Helvetica-Bold').text(`Mejor opción: ${result.recomendacion.mejorOpcion}`);
       doc.fontSize(10).font('Helvetica').text(result.recomendacion.razon);
-    }
 
-    doc.moveDown(2);
-    doc.fontSize(8).fillColor('gray').text(
-      `Generado por FinLab el ${fechaStr}. Las tasas son referenciales y pueden variar al momento de solicitud.`,
-      { align: 'center' },
-    );
-    doc.end();
+      doc.moveDown(2);
+      doc.fontSize(8).fillColor('gray').text(
+        `Generado por FinLab el ${fechaStr}. Las tasas son referenciales y pueden variar al momento de solicitud.`,
+        { align: 'center' },
+      );
+      doc.end();
+    }
   }
 
   // ---- Private helpers ----

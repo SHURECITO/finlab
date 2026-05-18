@@ -167,6 +167,9 @@ export class CreditComparisonService {
   }
 
   async getSimulationById(id: string, userId: string): Promise<SavedSimulationDocument> {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new NotFoundException(`Simulación ${id} no encontrada`);
+    }
     const doc = await this.savedSimModel.findById(id).exec();
     if (!doc) throw new NotFoundException(`Simulación ${id} no encontrada`);
     if (doc.userId.toString() !== userId) {
@@ -176,6 +179,9 @@ export class CreditComparisonService {
   }
 
   async deleteSimulation(id: string, userId: string): Promise<void> {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new NotFoundException(`Simulación ${id} no encontrada`);
+    }
     const doc = await this.savedSimModel.findById(id).exec();
     if (!doc) throw new NotFoundException(`Simulación ${id} no encontrada`);
     if (doc.userId.toString() !== userId) {
