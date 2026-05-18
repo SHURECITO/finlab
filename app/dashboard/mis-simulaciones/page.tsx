@@ -2,16 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { getUserSimulations, deleteSimulation } from '@/lib/api/credit';
+import { getUserSimulations, deleteSimulation, type SimulationSummary } from '@/lib/api/credit';
 
-interface SimulationRecord {
-  _id: string;
-  monto: number;
-  plazoMeses: number;
-  proposito: string;
-  nombre: string;
-  createdAt: string;
-}
+interface SimulationRecord extends SimulationSummary {}
 
 function formatCOP(value: number): string {
   return '$' + Math.round(value).toLocaleString('es-CO');
@@ -56,7 +49,7 @@ export default function MisSimulacionesPage() {
     if (!window.confirm('¿Eliminar esta simulación? Esta acción no se puede deshacer.')) return;
     setDeleting(id);
     deleteSimulation(id)
-      .then(() => setSims((prev) => prev.filter((s) => s._id !== id)))
+      .then(() => setSims((prev) => prev.filter((s) => s.id !== id)))
       .catch(() => alert('No se pudo eliminar la simulación.'))
       .finally(() => setDeleting(null));
   };
@@ -115,7 +108,7 @@ export default function MisSimulacionesPage() {
                 <th style={th}>Fecha</th>
                 <th style={th}>Monto</th>
                 <th style={th}>Plazo</th>
-                <th style={th}>Nombre</th>
+                <th style={th}>Mejor opción</th>
                 <th style={th}>Acciones</th>
               </tr>
             </thead>
@@ -123,15 +116,15 @@ export default function MisSimulacionesPage() {
               {loading
                 ? Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)
                 : sims.map((sim) => (
-                  <tr key={sim._id} style={{ borderBottom: '1px solid rgba(255,255,255,.05)' }}>
+                  <tr key={sim.id} style={{ borderBottom: '1px solid rgba(255,255,255,.05)' }}>
                     <td style={{ padding: '14px 12px', color: '#888' }}>{formatDate(sim.createdAt)}</td>
                     <td style={{ padding: '14px 12px', color: '#fff', fontWeight: 600 }}>{formatCOP(sim.monto)}</td>
                     <td style={{ padding: '14px 12px', color: '#ccc' }}>{sim.plazoMeses} meses</td>
-                    <td style={{ padding: '14px 12px', color: '#00D084', fontWeight: 600 }}>{sim.nombre || '—'}</td>
+                    <td style={{ padding: '14px 12px', color: '#00D084', fontWeight: 600 }}>{sim.mejorOpcion || '—'}</td>
                     <td style={{ padding: '14px 12px' }}>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <Link
-                          href={`/dashboard/comparador-alternativas?id=${sim._id}`}
+                          href={`/dashboard/comparador-alternativas?id=${sim.id}`}
                           style={{
                             display: 'inline-flex', alignItems: 'center', gap: '4px',
                             background: 'rgba(255,255,255,.08)', border: '1px solid rgba(255,255,255,.12)',
@@ -142,16 +135,16 @@ export default function MisSimulacionesPage() {
                           Ver →
                         </Link>
                         <button
-                          onClick={() => handleDelete(sim._id)}
-                          disabled={deleting === sim._id}
+                          onClick={() => handleDelete(sim.id)}
+                          disabled={deleting === sim.id}
                           style={{
                             background: 'transparent', border: '1px solid rgba(239,68,68,.3)',
                             color: '#EF4444', fontSize: '12px', fontWeight: 600, padding: '6px 12px',
-                            borderRadius: '8px', cursor: deleting === sim._id ? 'not-allowed' : 'pointer',
-                            opacity: deleting === sim._id ? 0.5 : 1,
+                            borderRadius: '8px', cursor: deleting === sim.id ? 'not-allowed' : 'pointer',
+                            opacity: deleting === sim.id ? 0.5 : 1,
                           }}
                         >
-                          {deleting === sim._id ? '...' : 'Eliminar'}
+                          {deleting === sim.id ? '...' : 'Eliminar'}
                         </button>
                       </div>
                     </td>

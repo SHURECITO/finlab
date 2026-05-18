@@ -77,6 +77,14 @@ export interface FinancialEntityItem {
   updatedAt: string;
 }
 
+export interface SimulationSummary {
+  id: string;
+  monto: number;
+  plazoMeses: number;
+  mejorOpcion: string;
+  createdAt: string;
+}
+
 // ---- API functions ----
 
 export async function simulateCredit(req: SimulationRequest): Promise<SimulationApiResponse> {
@@ -110,19 +118,13 @@ export async function saveSimulation(
   return res.json() as Promise<{ _id: string }>;
 }
 
-export async function getUserSimulations(): Promise<Array<{
-  _id: string;
-  monto: number;
-  plazoMeses: number;
-  proposito: string;
-  nombre: string;
-  createdAt: string;
-}>> {
+export async function getUserSimulations(): Promise<SimulationSummary[]> {
   const res = await fetch(`${API_BASE_URL}/credit/simulations`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error(`Failed to load simulations: ${res.status}`);
-  return res.json();
+  const data = await res.json() as { simulations: SimulationSummary[] };
+  return data.simulations;
 }
 
 export function getExcelDownloadUrl(simulationId: string): string {
