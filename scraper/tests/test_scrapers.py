@@ -41,3 +41,49 @@ class TestBancolombia:
         result = self.scraper._parse(html)
         assert result is not None
         assert result.products[0]["tasaEA"] == pytest.approx(0.25, abs=0.001)
+
+
+class TestBBVA:
+    def setup_method(self):
+        from scrapers.bbva import BBVAScraper
+        self.scraper = BBVAScraper()
+
+    def test_parse_extracts_rate(self):
+        result = self.scraper._parse(load("bbva.html"))
+        assert result is not None
+        assert result.code == "bbva"
+        assert result.products[0]["tasaEA"] == pytest.approx(0.1788, abs=0.001)
+
+    def test_parse_returns_none_when_no_rate(self):
+        assert self.scraper._parse("<html><body></body></html>") is None
+
+    def test_parse_product_fields(self):
+        result = self.scraper._parse(load("bbva.html"))
+        p = result.products[0]
+        assert p["montoMinimo"] == 3_000_000
+        assert p["montoMaximo"] == 200_000_000
+        assert p["plazoMinMeses"] == 12
+        assert p["plazoMaxMeses"] == 84
+
+
+class TestBancoBogota:
+    def setup_method(self):
+        from scrapers.banco_bogota import BancoBogotaScraper
+        self.scraper = BancoBogotaScraper()
+
+    def test_parse_extracts_rate(self):
+        result = self.scraper._parse(load("banco_bogota.html"))
+        assert result is not None
+        assert result.code == "banco_bogota"
+        assert result.products[0]["tasaEA"] == pytest.approx(0.2534, abs=0.001)
+
+    def test_parse_returns_none_when_no_rate(self):
+        assert self.scraper._parse("<html><body></body></html>") is None
+
+    def test_parse_product_fields(self):
+        result = self.scraper._parse(load("banco_bogota.html"))
+        p = result.products[0]
+        assert p["montoMinimo"] == 1_000_000
+        assert p["montoMaximo"] == 500_000_000
+        assert p["plazoMinMeses"] == 24
+        assert p["plazoMaxMeses"] == 72
