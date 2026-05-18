@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   simulateCredit,
@@ -243,6 +243,7 @@ function ComparadorContent() {
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [alternatives, setAlternatives] = useState<FinancingAlternative[]>([]);
+  const [restoreError, setRestoreError] = useState<string | null>(null);
 
   // Auto-restore simulation from ?id= query param
   useEffect(() => {
@@ -253,7 +254,7 @@ function ComparadorContent() {
         setResult(saved);
         setSimulationId(idFromUrl);
       })
-      .catch(() => {/* silently ignore */})
+      .catch(() => setRestoreError('No se pudo restaurar la simulación guardada.'))
       .finally(() => setLoading(false));
   }, [idFromUrl]);
 
@@ -451,6 +452,11 @@ function ComparadorContent() {
         </form>
       </div>
 
+      {/* Restore error */}
+      {restoreError && (
+        <p style={{ fontSize: '13px', color: '#EF4444', marginBottom: '16px' }}>{restoreError}</p>
+      )}
+
       {/* Error state */}
       {error && (
         <div
@@ -612,9 +618,8 @@ function ComparadorContent() {
                   </thead>
                   <tbody>
                     {eligible.map(item => (
-                      <>
+                      <React.Fragment key={item.entidad.code}>
                         <tr
-                          key={item.entidad.code}
                           style={{
                             background:
                               expandedCode === item.entidad.code
@@ -735,7 +740,7 @@ function ComparadorContent() {
                             </td>
                           </tr>
                         )}
-                      </>
+                      </React.Fragment>
                     ))}
                   </tbody>
                 </table>

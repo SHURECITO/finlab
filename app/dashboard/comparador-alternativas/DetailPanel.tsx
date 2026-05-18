@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { CreditResultItem, getExcelDownloadUrl, downloadSimulationPdf } from '@/lib/api/credit';
+import { CreditResultItem, downloadSimulationPdf } from '@/lib/api/credit';
+import { API_BASE_URL } from '@/lib/api/helpers';
 import { formatCOP, SEMAFORO_COLORS } from '@/lib/formatters';
 
 interface DetailPanelProps {
@@ -38,10 +39,36 @@ const innerTdStyle: React.CSSProperties = {
   verticalAlign: 'middle',
 };
 
+async function downloadExcel(simulationId: string): Promise<void> {
+  const { getToken } = await import('@/lib/auth');
+  const token = getToken();
+  if (!token) throw new Error('No autenticado');
+
+  const res = await fetch(`${API_BASE_URL}/credit/export/${simulationId}/xlsx`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!res.ok) throw new Error(`Excel error ${res.status}`);
+
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const disposition = res.headers.get('Content-Disposition') ?? '';
+  const match = /filename="([^"]+)"/.exec(disposition);
+  a.download = match?.[1] ?? 'finlab-simulacion.xlsx';
+  a.href = url;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 export default function DetailPanel({ item, simulationId, onClose }: DetailPanelProps) {
   const [showAllAmort, setShowAllAmort] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
+  const [downloadingExcel, setDownloadingExcel] = useState(false);
+  const [excelError, setExcelError] = useState<string | null>(null);
 
   const { tablasComparativas: tc, tablaAmortizacion: amort, plazoUsuario } = (() => {
     return {
@@ -343,19 +370,27 @@ export default function DetailPanel({ item, simulationId, onClose }: DetailPanel
       <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
         {simulationId && (
           <button
-            onClick={() => window.open(getExcelDownloadUrl(simulationId), '_blank')}
+            onClick={() => {
+              setDownloadingExcel(true);
+              setExcelError(null);
+              downloadExcel(simulationId)
+                .catch(() => setExcelError('No se pudo descargar el Excel.'))
+                .finally(() => setDownloadingExcel(false));
+            }}
+            disabled={downloadingExcel}
             style={{
               background: 'transparent',
               border: '1px solid rgba(255,255,255,.15)',
               borderRadius: '8px',
               color: '#aaa',
               padding: '9px 18px',
-              cursor: 'pointer',
+              cursor: downloadingExcel ? 'not-allowed' : 'pointer',
               fontSize: '13px',
               fontFamily: "'Sora', sans-serif",
+              opacity: downloadingExcel ? 0.6 : 1,
             }}
           >
-            ⬇ Descargar Excel
+            {downloadingExcel ? 'Descargando...' : '⬇ Descargar Excel'}
           </button>
         )}
 
@@ -380,6 +415,7 @@ export default function DetailPanel({ item, simulationId, onClose }: DetailPanel
           </button>
         )}
       </div>
+      {excelError && <p style={{ fontSize: '13px', color: '#EF4444', marginTop: '8px' }}>{excelError}</p>}
       {pdfError && <p style={{ fontSize: '13px', color: '#EF4444', marginTop: '8px' }}>{pdfError}</p>}
     </div>
   );
