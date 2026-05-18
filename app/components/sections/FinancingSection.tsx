@@ -7,7 +7,7 @@ import {
 } from "@/lib/constants/financing-options";
 import { useScrollObserver } from "./useScrollObserver";
 
-const MAX_SELECTION = 2;
+const MAX_SELECTION = 3;
 const COP_LOCALE = "es-CO";
 const CURRENCY_PREFIX = "$";
 const DELAY_CLASSES = ["", "delay-1", "delay-2", "delay-3"];
@@ -19,21 +19,98 @@ const TYPE_LABELS: Record<FinancingOption["type"], string> = {
   capital_semilla: "Capital semilla",
 };
 
+const COMPARE_ROWS: Array<{
+  label: string;
+  render: (opt: FinancingOption) => React.ReactNode;
+}> = [
+  { label: "Costo de capital", render: (opt) => opt.capitalCost },
+  {
+    label: "Monto mínimo",
+    render: (opt) =>
+      CURRENCY_PREFIX + Math.round(opt.minAmount).toLocaleString(COP_LOCALE),
+  },
+  {
+    label: "Monto máximo",
+    render: (opt) =>
+      CURRENCY_PREFIX + Math.round(opt.maxAmount).toLocaleString(COP_LOCALE),
+  },
+  { label: "Pago / flujo", render: (opt) => opt.paymentFlow },
+  {
+    label: "Pros",
+    render: (opt) => (
+      <ul className="comparison-list">
+        {opt.pros.slice(0, 3).map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
+    ),
+  },
+  {
+    label: "Contras",
+    render: (opt) => (
+      <ul className="comparison-list">
+        {opt.cons.slice(0, 3).map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
+    ),
+  },
+  {
+    label: "Requisitos",
+    render: (opt) => (
+      <ul className="comparison-list">
+        {opt.requirements.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
+    ),
+  },
+];
+
 export function FinancingSection() {
   const addRef = useScrollObserver();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2500);
+  };
 
   const toggleSelection = (id: string) => {
+    const option = FINANCING_OPTIONS.find((o) => o.id === id);
+    if (!option) return;
+
     setSelectedIds((prev) => {
+      // Deselect if already selected
       if (prev.includes(id)) {
         return prev.filter((item) => item !== id);
       }
+
+      // Check category consistency
+      if (prev.length > 0) {
+        const existingCategory = FINANCING_OPTIONS.find(
+          (o) => o.id === prev[0],
+        )?.type;
+        if (existingCategory && option.type !== existingCategory) {
+          showToast(
+            `Solo puedes comparar opciones del mismo tipo (${TYPE_LABELS[existingCategory]}). Se ha reiniciado la selección.`,
+          );
+          return [id]; // Replace all with new selection
+        }
+      }
+
+      // Max 3 items
       if (prev.length >= MAX_SELECTION) {
+        showToast(`Máximo ${MAX_SELECTION} opciones a la vez.`);
         return prev;
       }
+
       return [...prev, id];
     });
   };
+
+  const clearSelection = () => setSelectedIds([]);
 
   const selectedOptions = FINANCING_OPTIONS.filter((option) =>
     selectedIds.includes(option.id),
@@ -50,8 +127,34 @@ export function FinancingSection() {
     </ul>
   );
 
+  // Keep renderList in scope for any legacy use; COMPARE_ROWS uses inline renders
+  void renderList;
+
   return (
     <section className="features-bg" id="financing">
+      {toast && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: "24px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            background: "#1a1a1a",
+            border: "1px solid rgba(255,255,255,.15)",
+            color: "#fff",
+            padding: "12px 20px",
+            borderRadius: "12px",
+            fontSize: "14px",
+            fontWeight: 500,
+            zIndex: 9999,
+            boxShadow: "0 4px 24px rgba(0,0,0,.5)",
+            maxWidth: "420px",
+            textAlign: "center",
+          }}
+        >
+          {toast}
+        </div>
+      )}
       <div className="section-inner">
         <div className="features-head-row">
           <div className="animate-on-scroll" ref={addRef}>
@@ -73,7 +176,17 @@ export function FinancingSection() {
         <div className="financing-grid">
           {FINANCING_OPTIONS.map((option, index) => {
             const isSelected = selectedIds.includes(option.id);
-            const isDisabled = selectedIds.length >= MAX_SELECTION && !isSelected;
+
+            const categoryMismatch =
+              selectedIds.length > 0 &&
+              !isSelected &&
+              FINANCING_OPTIONS.find((o) => o.id === selectedIds[0])?.type !==
+                option.type;
+
+            const isDisabled =
+              (selectedIds.length >= MAX_SELECTION && !isSelected) ||
+              categoryMismatch;
+
             const delayClass = DELAY_CLASSES[index % DELAY_CLASSES.length];
             const cardClassName = [
               "feat-card",
@@ -120,67 +233,113 @@ export function FinancingSection() {
           })}
         </div>
 
-        {selectedOptions.length === MAX_SELECTION && (
-          <div className="financing-compare animate-on-scroll" ref={addRef}>
-            <div className="financing-compare-title">
-              Comparador de alternativas
+        {selectedOptions.length >= 2 && (
+          <div className="financing-compare">
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: "20px",
+              }}
+            >
+              <div className="financing-compare-title">
+                Comparador de alternativas
+              </div>
+              <button
+                onClick={clearSelection}
+                style={{
+                  background: "transparent",
+                  border: "1px solid rgba(255,255,255,.2)",
+                  color: "#aaa",
+                  borderRadius: "8px",
+                  padding: "6px 14px",
+                  fontSize: "13px",
+                  cursor: "pointer",
+                }}
+              >
+                ✕ Cerrar
+              </button>
             </div>
-            <div className="comparison-table">
-              <div className="comparison-row comparison-head">
-                <div></div>
-                <div>{selectedOptions[0].name}</div>
-                <div>{selectedOptions[1].name}</div>
-              </div>
-              <div className="comparison-row">
-                <div className="comparison-label">Costo de capital</div>
-                <div className="comparison-value">{selectedOptions[0].capitalCost}</div>
-                <div className="comparison-value">{selectedOptions[1].capitalCost}</div>
-              </div>
-              <div className="comparison-row">
-                <div className="comparison-label">Monto mínimo</div>
-                <div className="comparison-value">
-                  {formatCOP(selectedOptions[0].minAmount)}
-                </div>
-                <div className="comparison-value">
-                  {formatCOP(selectedOptions[1].minAmount)}
-                </div>
-              </div>
-              <div className="comparison-row">
-                <div className="comparison-label">Monto máximo</div>
-                <div className="comparison-value">
-                  {formatCOP(selectedOptions[0].maxAmount)}
-                </div>
-                <div className="comparison-value">
-                  {formatCOP(selectedOptions[1].maxAmount)}
-                </div>
-              </div>
-              <div className="comparison-row">
-                <div className="comparison-label">Pros</div>
-                <div className="comparison-value">
-                  {renderList(selectedOptions[0].pros)}
-                </div>
-                <div className="comparison-value">
-                  {renderList(selectedOptions[1].pros)}
-                </div>
-              </div>
-              <div className="comparison-row">
-                <div className="comparison-label">Contras</div>
-                <div className="comparison-value">
-                  {renderList(selectedOptions[0].cons)}
-                </div>
-                <div className="comparison-value">
-                  {renderList(selectedOptions[1].cons)}
-                </div>
-              </div>
-              <div className="comparison-row">
-                <div className="comparison-label">Requisitos</div>
-                <div className="comparison-value">
-                  {renderList(selectedOptions[0].requirements)}
-                </div>
-                <div className="comparison-value">
-                  {renderList(selectedOptions[1].requirements)}
-                </div>
-              </div>
+
+            <div style={{ overflowX: "auto" }}>
+              <table
+                style={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                  fontSize: "13px",
+                  minWidth: "500px",
+                }}
+              >
+                <thead>
+                  <tr
+                    style={{ borderBottom: "1px solid rgba(255,255,255,.1)" }}
+                  >
+                    <th
+                      style={{
+                        padding: "10px 12px",
+                        textAlign: "left",
+                        color: "#777",
+                        fontWeight: 600,
+                        textTransform: "uppercase",
+                        fontSize: "11px",
+                        letterSpacing: ".06em",
+                        width: "140px",
+                      }}
+                    ></th>
+                    {selectedOptions.map((opt) => (
+                      <th
+                        key={opt.id}
+                        style={{
+                          padding: "10px 12px",
+                          textAlign: "left",
+                          color: "#fff",
+                          fontWeight: 700,
+                          fontSize: "13px",
+                        }}
+                      >
+                        {opt.name}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {COMPARE_ROWS.map((row) => (
+                    <tr
+                      key={row.label}
+                      style={{
+                        borderBottom: "1px solid rgba(255,255,255,.05)",
+                      }}
+                    >
+                      <td
+                        style={{
+                          padding: "12px",
+                          color: "#777",
+                          fontWeight: 600,
+                          fontSize: "12px",
+                          textTransform: "uppercase",
+                          letterSpacing: ".04em",
+                          verticalAlign: "top",
+                        }}
+                      >
+                        {row.label}
+                      </td>
+                      {selectedOptions.map((opt) => (
+                        <td
+                          key={opt.id}
+                          style={{
+                            padding: "12px",
+                            color: "#ccc",
+                            verticalAlign: "top",
+                          }}
+                        >
+                          {row.render(opt)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
