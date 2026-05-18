@@ -87,3 +87,72 @@ class TestBancoBogota:
         assert p["montoMaximo"] == 500_000_000
         assert p["plazoMinMeses"] == 24
         assert p["plazoMaxMeses"] == 72
+
+
+class TestSempli:
+    def setup_method(self):
+        from scrapers.sempli import SempliScraper
+        self.scraper = SempliScraper()
+
+    def test_parse_extracts_rate(self):
+        result = self.scraper._parse(load("sempli.html"))
+        assert result is not None
+        assert result.code == "sempli"
+        assert result.products[0]["tasaEA"] == pytest.approx(0.2465, abs=0.001)
+
+    def test_parse_returns_none_when_no_rate(self):
+        assert self.scraper._parse("<html><body></body></html>") is None
+
+    def test_parse_product_fields(self):
+        result = self.scraper._parse(load("sempli.html"))
+        p = result.products[0]
+        assert p["montoMinimo"] == 10_000_000
+        assert p["montoMaximo"] == 250_000_000
+        assert p["plazoMinMeses"] == 12
+        assert p["plazoMaxMeses"] == 36
+
+
+class TestLuloBank:
+    def setup_method(self):
+        from scrapers.lulo_bank import LuloBankScraper
+        self.scraper = LuloBankScraper()
+
+    def test_parse_extracts_rate(self):
+        result = self.scraper._parse(load("lulo_bank.html"))
+        assert result is not None
+        assert result.code == "lulo_bank"
+        assert result.products[0]["tasaEA"] == pytest.approx(0.2241, abs=0.001)
+
+    def test_parse_returns_none_when_no_rate(self):
+        assert self.scraper._parse("<html><body></body></html>") is None
+
+    def test_parse_product_fields(self):
+        result = self.scraper._parse(load("lulo_bank.html"))
+        p = result.products[0]
+        assert p["montoMinimo"] == 1_000_000
+        assert p["montoMaximo"] == 50_000_000
+        assert p["plazoMinMeses"] == 12
+        assert p["plazoMaxMeses"] == 48
+
+
+class TestR5:
+    def setup_method(self):
+        from scrapers.r5 import R5Scraper
+        self.scraper = R5Scraper()
+
+    def test_parse_extracts_rate(self):
+        result = self.scraper._parse(load("r5.html"))
+        assert result is not None
+        assert result.code == "r5"
+        assert result.products[0]["tasaEA"] == pytest.approx(0.1816, abs=0.001)
+
+    def test_parse_returns_none_when_no_rate(self):
+        assert self.scraper._parse("<html><body></body></html>") is None
+
+    def test_parse_product_fields(self):
+        result = self.scraper._parse(load("r5.html"))
+        p = result.products[0]
+        assert p["montoMinimo"] == 5_000_000
+        assert p["montoMaximo"] == 50_000_000
+        assert p["plazoMinMeses"] == 12
+        assert p["plazoMaxMeses"] == 48
