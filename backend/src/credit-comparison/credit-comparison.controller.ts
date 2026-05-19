@@ -235,12 +235,14 @@ export class CreditComparisonController {
       doc.text(`Semáforo: ${entityResult.semaforo}`);
       doc.moveDown(1);
 
-      doc.fontSize(13).font('Helvetica-Bold').text('Interpretación', { underline: true });
+      doc.fontSize(13).font('Helvetica-Bold').text('Interpretación');
+      this.pdfUnderline(doc, doc.y);
       doc.moveDown(0.4);
       doc.fontSize(10).font('Helvetica').text(entityResult.interpretacion, { lineGap: 2 });
       doc.moveDown(1);
 
-      doc.fontSize(13).font('Helvetica-Bold').text('Tabla de Amortización', { underline: true });
+      doc.fontSize(13).font('Helvetica-Bold').text('Tabla de Amortización');
+      this.pdfUnderline(doc, doc.y);
       doc.moveDown(0.4);
 
       const colW = [40, 80, 70, 70, 80, 80];
@@ -309,7 +311,8 @@ export class CreditComparisonController {
       doc.text(`IPC anual utilizado: ${(result.ipcAnualUsado * 100).toFixed(2)}%`);
       doc.moveDown(1);
 
-      doc.fontSize(13).font('Helvetica-Bold').text('Entidades Elegibles', { underline: true });
+      doc.fontSize(13).font('Helvetica-Bold').text('Entidades Elegibles');
+      this.pdfUnderline(doc, doc.y);
       doc.moveDown(0.4);
 
       if (eligibleResults.length === 0) {
@@ -355,7 +358,8 @@ export class CreditComparisonController {
       }
 
       doc.moveDown(1.5);
-      doc.fontSize(13).font('Helvetica-Bold').text('Recomendación', { underline: true });
+      doc.fontSize(13).font('Helvetica-Bold').text('Recomendación');
+      this.pdfUnderline(doc, doc.y);
       doc.moveDown(0.4);
       doc.fontSize(11).font('Helvetica-Bold').text(`Mejor opción: ${result.recomendacion.mejorOpcion}`);
       doc.fontSize(10).font('Helvetica').text(result.recomendacion.razon);
@@ -371,12 +375,19 @@ export class CreditComparisonController {
 
   // ---- Private helpers ----
 
-  private formatCOP(value: number): string {
+  private formatCOP(value: number | undefined | null): string {
+    if (value == null || !isFinite(value)) return '—';
     return (
       '$' +
       Math.round(value)
         .toLocaleString('es-CO')
         .replace(/,/g, '.')
     );
+  }
+
+  private pdfUnderline(doc: InstanceType<typeof PDFDocument>, y: number): void {
+    const margin = doc.page.margins.left;
+    const width = doc.page.width - margin - doc.page.margins.right;
+    doc.moveTo(margin, y + 1).lineTo(margin + width, y + 1).lineWidth(0.5).stroke('#333333');
   }
 }
