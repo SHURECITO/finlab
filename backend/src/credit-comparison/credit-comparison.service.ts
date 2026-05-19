@@ -178,6 +178,11 @@ export class CreditComparisonService {
     return doc;
   }
 
+  async getLatestIpcRate(): Promise<number> {
+    const rate = await this.rateModel.findOne({ indicator: 'IPC_ANUAL' }).exec();
+    return rate?.value ?? 0.0568;
+  }
+
   async deleteSimulation(id: string, userId: string): Promise<void> {
     if (!Types.ObjectId.isValid(id)) {
       throw new NotFoundException(`Simulación ${id} no encontrada`);

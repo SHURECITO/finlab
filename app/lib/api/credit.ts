@@ -203,6 +203,115 @@ export async function deleteSimulation(id: string): Promise<void> {
   if (!res.ok) throw new Error(`Error ${res.status}`);
 }
 
+// ---- Financial analysis (Block 2) ----
+
+export interface SectorInfo {
+  code: string;
+  name: string;
+  wacc: number;
+}
+
+export interface YearlyCashFlow {
+  year: number;
+  capitalDeTrabajo: number;
+  flujoCajaOperativo: number;
+  flujoCajaInversion: number;
+  flujoCajaProyecto: number;
+}
+
+export interface FinancialAnalysisResponse {
+  id: string;
+  vpn: number;
+  tir: number;
+  wacc: number;
+  evaluacion: 'rentable' | 'no_rentable' | 'marginal';
+  explicacion: string;
+  sectorInfo: SectorInfo;
+  cashFlowProjection: {
+    years: YearlyCashFlow[];
+    inflacionAnualUsada: number;
+  };
+}
+
+export interface FinancialSummaryResponse {
+  hasFinancialProfile: boolean;
+  profile?: {
+    activos: number;
+    ingresosMensuales: number;
+    gastosMensuales: number;
+    sectorEconomico: string;
+    sectorInfo: SectorInfo;
+  };
+  latestAnalysis?: {
+    vpn: number;
+    tir: number;
+    wacc: number;
+    evaluacion: string;
+    explicacion: string;
+    computedAt: string;
+  } | null;
+}
+
+export async function getSectors(): Promise<SectorInfo[]> {
+  const res = await fetch(`${API_BASE_URL}/credit/sectors`);
+  if (!res.ok) throw new Error(`Error ${res.status}`);
+  return res.json() as Promise<SectorInfo[]>;
+}
+
+export async function setFinancialProfile(data: {
+  activos?: number;
+  ingresosMensuales?: number;
+  gastosMensuales?: number;
+  sectorEconomico?: string;
+  skip?: boolean;
+}): Promise<{ success: boolean; hasFinancialProfile: boolean }> {
+  const { getToken } = await import('@/lib/auth');
+  const token = getToken();
+  if (!token) throw new Error('No autenticado');
+  const res = await fetch(`${API_BASE_URL}/companies/my/financial-profile`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as { message?: string };
+    throw new Error(err.message ?? `Error ${res.status}`);
+  }
+  return res.json() as Promise<{ success: boolean; hasFinancialProfile: boolean }>;
+}
+
+export async function runFinancialAnalysis(
+  simulationId: string,
+  entityCode: string,
+): Promise<FinancialAnalysisResponse> {
+  const { getToken } = await import('@/lib/auth');
+  const token = getToken();
+  if (!token) throw new Error('No autenticado');
+  const res = await fetch(`${API_BASE_URL}/credit/financial-analysis`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ simulationId, entityCode }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as { error?: string; hasFinancialProfile?: boolean };
+    const error = new Error(err.error ?? `Error ${res.status}`);
+    (error as Error & { hasFinancialProfile?: boolean }).hasFinancialProfile = err.hasFinancialProfile;
+    throw error;
+  }
+  return res.json() as Promise<FinancialAnalysisResponse>;
+}
+
+export async function getFinancialSummary(): Promise<FinancialSummaryResponse> {
+  const { getToken } = await import('@/lib/auth');
+  const token = getToken();
+  if (!token) return { hasFinancialProfile: false };
+  const res = await fetch(`${API_BASE_URL}/credit/financial-summary`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) return { hasFinancialProfile: false };
+  return res.json() as Promise<FinancialSummaryResponse>;
+}
+
 // ---- Task 12: Financing alternatives ----
 
 export interface FinancingAlternative {

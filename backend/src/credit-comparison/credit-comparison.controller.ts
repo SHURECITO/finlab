@@ -10,8 +10,12 @@ import {
   Request,
   Logger,
   NotFoundException,
+  BadRequestException,
   Res,
+  InternalServerErrorException,
 } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model, Types } from 'mongoose';
 import type { Response } from 'express';
 import { Workbook } from 'exceljs';
 import PDFDocument from 'pdfkit';
@@ -20,12 +24,25 @@ import { SimulateCreditDto } from './dto/simulate-credit.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 import { SimulationResponse, CreditResult } from './interfaces/credit-types';
+import { WaccService } from './services/wacc.service';
+import { CashFlowProjectionService } from './services/cash-flow-projection.service';
+import { FinancialMetricsService } from './services/financial-metrics.service';
+import { FinancialAnalysis, FinancialAnalysisDocument } from './schemas/financial-analysis.schema';
+import { CompanyService } from '../company/company.service';
 
 @Controller('credit')
 export class CreditComparisonController {
   private readonly logger = new Logger(CreditComparisonController.name);
 
-  constructor(private readonly creditService: CreditComparisonService) {}
+  constructor(
+    private readonly creditService: CreditComparisonService,
+    private readonly waccService: WaccService,
+    private readonly cashFlowService: CashFlowProjectionService,
+    private readonly financialMetricsService: FinancialMetricsService,
+    private readonly companyService: CompanyService,
+    @InjectModel(FinancialAnalysis.name)
+    private readonly financialAnalysisModel: Model<FinancialAnalysisDocument>,
+  ) {}
 
   @Post('simulate')
   @UseGuards(OptionalJwtAuthGuard)
@@ -73,6 +90,107 @@ export class CreditComparisonController {
   ) {
     await this.creditService.deleteSimulation(id, req.user.id);
     return { deleted: true };
+  }
+
+  @Get('sectors')
+  getSectors() {
+    return this.waccService.getAllSectors();
+  }
+
+  @Post('financial-analysis')
+  @UseGuards(JwtAuthGuard)
+  async financialAnalysis(
+    @Body() body: { simulationId: string; entityCode: string },
+    @Request() req: { user: { id: string } },
+  ) {
+    const company = await this.companyService.findByUserId(req.user.id);
+    if (!company?.hasFinancialProfile) {
+      throw new BadRequestException({
+        error: 'No cuentas con los datos financieros necesarios. Completa tu perfil para ver VPN y TIR.',
+        hasFinancialProfile: false,
+      });
+    }
+
+    const sim = await this.creditService.getSimulationById(body.simulationId, req.user.id);
+    const result = sim.result as unknown as SimulationResponse;
+    const entityResult = result.resultados.find(
+      (r: CreditResult) => r.entidad.code === body.entityCode && r.elegible,
+    );
+    if (!entityResult) {
+      throw new NotFoundException(`Entidad ${body.entityCode} no encontrada o no elegible`);
+    }
+
+    const inflacion = await this.creditService.getLatestIpcRate();
+    const projection = this.cashFlowService.compute({
+      activos: company.activos!,
+      ingresosMensuales: company.ingresosMensuales!,
+      gastosMensuales: company.gastosMensuales!,
+      montoCredito: result.monto,
+      inflacionAnual: inflacion,
+    });
+
+    const wacc = this.waccService.getWacc(company.sectorEconomico!);
+    const fcps = projection.years.map((y) => y.flujoCajaProyecto);
+    const metrics = this.financialMetricsService.compute({ flujosCajaProyecto: fcps, wacc });
+
+    const analysis = await this.financialAnalysisModel.create({
+      userId: new Types.ObjectId(req.user.id),
+      simulationId: Types.ObjectId.isValid(body.simulationId) ? new Types.ObjectId(body.simulationId) : undefined,
+      entityCode: body.entityCode,
+      inputSnapshot: {
+        activos: company.activos!,
+        ingresosMensuales: company.ingresosMensuales!,
+        gastosMensuales: company.gastosMensuales!,
+        sectorEconomico: company.sectorEconomico!,
+      },
+      cashFlowProjection: projection,
+      ...metrics,
+    });
+
+    this.logger.log(`Financial analysis ${analysis._id} created for user ${req.user.id}`);
+
+    return {
+      id: (analysis._id as Types.ObjectId).toString(),
+      cashFlowProjection: projection,
+      ...metrics,
+      sectorInfo: this.waccService.getSectorInfo(company.sectorEconomico!),
+    };
+  }
+
+  @Get('financial-summary')
+  @UseGuards(JwtAuthGuard)
+  async getFinancialSummary(@Request() req: { user: { id: string } }) {
+    const company = await this.companyService.findByUserId(req.user.id);
+    if (!company?.hasFinancialProfile) {
+      return { hasFinancialProfile: false };
+    }
+
+    const latestAnalysis = await this.financialAnalysisModel
+      .findOne({ userId: new Types.ObjectId(req.user.id) })
+      .sort({ createdAt: -1 })
+      .lean()
+      .exec();
+
+    return {
+      hasFinancialProfile: true,
+      profile: {
+        activos: company.activos,
+        ingresosMensuales: company.ingresosMensuales,
+        gastosMensuales: company.gastosMensuales,
+        sectorEconomico: company.sectorEconomico,
+        sectorInfo: this.waccService.getSectorInfo(company.sectorEconomico!),
+      },
+      latestAnalysis: latestAnalysis
+        ? {
+            vpn: latestAnalysis.vpn,
+            tir: latestAnalysis.tir,
+            wacc: latestAnalysis.wacc,
+            evaluacion: latestAnalysis.evaluacion,
+            explicacion: latestAnalysis.explicacion,
+            computedAt: (latestAnalysis as unknown as { createdAt: Date }).createdAt,
+          }
+        : null,
+    };
   }
 
   @Get('export/:id/xlsx')

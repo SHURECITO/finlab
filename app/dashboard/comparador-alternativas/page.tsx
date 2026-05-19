@@ -9,10 +9,12 @@ import {
   downloadSimulationPdf,
   getSimulationById,
   getFinancingAlternatives,
+  getFinancialSummary,
   FinancingAlternative,
 } from '@/lib/api/credit';
 import { formatCOP, formatPct, SEMAFORO_COLORS } from '@/lib/formatters';
 import DetailPanel from './DetailPanel';
+import FinancialProfilePrompt from './FinancialProfilePrompt';
 
 // ---- helpers ----
 
@@ -244,6 +246,8 @@ function ComparadorContent() {
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [alternatives, setAlternatives] = useState<FinancingAlternative[]>([]);
   const [restoreError, setRestoreError] = useState<string | null>(null);
+  const [profileChecked, setProfileChecked] = useState(false);
+  const [showProfilePrompt, setShowProfilePrompt] = useState(false);
 
   // Auto-restore simulation from ?id= query param
   useEffect(() => {
@@ -266,6 +270,18 @@ function ComparadorContent() {
     getFinancingAlternatives()
       .then(setAlternatives)
       .catch(() => {/* silently fail */});
+  }, []);
+
+  // Check financial profile on mount
+  useEffect(() => {
+    getFinancialSummary()
+      .then((summary) => {
+        setShowProfilePrompt(!summary.hasFinancialProfile);
+        setProfileChecked(true);
+      })
+      .catch(() => {
+        setProfileChecked(true); // show comparator even if check fails
+      });
   }, []);
 
   // ---- handlers ----
@@ -321,6 +337,25 @@ function ComparadorContent() {
   const hasStale = result?.resultados.some(r => r.stale === true) ?? false;
 
   // ---- render ----
+
+  if (!profileChecked) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300, color: '#555' }}>
+        Cargando...
+      </div>
+    );
+  }
+
+  if (showProfilePrompt) {
+    return (
+      <div style={{ fontFamily: "'Sora', sans-serif", maxWidth: '1100px' }}>
+        <FinancialProfilePrompt
+          onComplete={() => setShowProfilePrompt(false)}
+          onSkip={() => setShowProfilePrompt(false)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div style={{ fontFamily: "'Sora', sans-serif", maxWidth: '1100px' }}>

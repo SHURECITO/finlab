@@ -1,9 +1,14 @@
-import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Injectable, ForbiddenException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types, isValidObjectId } from 'mongoose';
 import { Company, CompanyDocument } from './schemas/company.schema';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
+
+const VALID_SECTORS = new Set([
+  'tech_saas', 'retail', 'manufactura', 'servicios', 'construccion',
+  'agro', 'salud', 'educacion', 'alimentos', 'transporte', 'turismo', 'energia', 'otros',
+]);
 
 @Injectable()
 export class CompanyService {
@@ -37,7 +42,56 @@ export class CompanyService {
     return company.save();
   }
 
-  async findPublic(): Promise<any[]> {
+  async findByUserId(userId: string): Promise<CompanyDocument | null> {
+    return this.companyModel.findOne({ userId: new Types.ObjectId(userId) }).sort({ createdAt: 1 }).exec();
+  }
+
+  async setFinancialProfile(
+    userId: string,
+    data: { activos: number; ingresosMensuales: number; gastosMensuales: number; sectorEconomico: string },
+  ): Promise<CompanyDocument> {
+    if (!VALID_SECTORS.has(data.sectorEconomico)) {
+      throw new BadRequestException(`Sector no reconocido: ${data.sectorEconomico}`);
+    }
+    const update = {
+      ...data,
+      hasFinancialProfile: true,
+      financialProfileUpdatedAt: new Date(),
+    };
+
+    const company = await this.companyModel.findOneAndUpdate(
+      { userId: new Types.ObjectId(userId) },
+      {
+        $set: update,
+        $setOnInsert: {
+          name: 'Mi empresa',
+          description: 'Perfil creado desde el comparador',
+          sector: data.sectorEconomico,
+          city: 'Colombia',
+          stage: 'idea',
+          foundedYear: new Date().getFullYear(),
+        },
+      },
+      { upsert: true, new: true },
+    );
+    return company!;
+  }
+
+  async clearFinancialProfile(userId: string): Promise<void> {
+    const company = await this.findByUserId(userId);
+    if (!company) return;
+    company.set({
+      activos: undefined,
+      ingresosMensuales: undefined,
+      gastosMensuales: undefined,
+      sectorEconomico: undefined,
+      hasFinancialProfile: false,
+      financialProfileUpdatedAt: new Date(),
+    });
+    await company.save();
+  }
+
+  async findPublic(): Promise<unknown[]> {
     // Aggregation: public companies + their latest simulation
     return this.companyModel.aggregate([
       { $match: { isPublic: true } },

@@ -32,6 +32,25 @@ export class Company {
   @Prop({ default: false })
   isPublic: boolean;
 
+  // Financial profile — all 4 must be set together (all-or-nothing rule)
+  @Prop({ min: 0 })
+  activos?: number;
+
+  @Prop({ min: 0 })
+  ingresosMensuales?: number;
+
+  @Prop({ min: 0 })
+  gastosMensuales?: number;
+
+  @Prop()
+  sectorEconomico?: string;
+
+  @Prop({ default: false })
+  hasFinancialProfile: boolean;
+
+  @Prop()
+  financialProfileUpdatedAt?: Date;
+
   createdAt: Date;
   updatedAt: Date;
 }
