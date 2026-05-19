@@ -30,7 +30,11 @@ export class FinancialMetricsService {
     let evaluacion: FinancialMetricsOutput['evaluacion'];
     let explicacion: string;
 
-    if (tir === null) {
+    if (tir === null && vpn > 0) {
+      // All-positive cash flows → no finite IRR, but VPN confirms positive return
+      evaluacion = 'rentable';
+      explicacion = `El VPN es positivo ($${Math.round(vpn).toLocaleString('es-CO')}), lo que indica que el proyecto genera valor. La TIR no pudo calcularse con precisión porque los flujos de caja son todos positivos (rentabilidad muy alta). Tu WACC sectorial de referencia es ${waccPct}%.`;
+    } else if (tir === null) {
       evaluacion = 'no_rentable';
       explicacion = `No se pudo calcular una TIR convergente con estos flujos. Esto suele indicar que el proyecto genera pérdidas en la mayoría de los años. Tu WACC sectorial de referencia es ${waccPct}%.`;
     } else if (tir > input.wacc + 0.02) {
